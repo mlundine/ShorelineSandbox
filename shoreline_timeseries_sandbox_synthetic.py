@@ -66,7 +66,7 @@ def apply_NANs(y,
     
 def make_matrix(dt):
     """
-    Just hardcoding a start and end datetime with a timestep of 16 days
+    Just hardcoding a start and end datetime with a timestep of dt days
     Make a matrix to hold cross-shore position values
     """
     datetimes = np.arange(datetime.datetime(1984,1,1),
@@ -81,7 +81,7 @@ def make_matrix(dt):
     return shoreline_matrix, datetimes
 
 ##Initialize stuff
-#random.seed(0) #uncomment if you want to keep the randomness the same and play with hard-coded values
+random.seed(0) #uncomment if you want to keep the randomness the same and play with hard-coded values
 dt = 12 #revisit time in days
 matrix, datetimes = make_matrix(dt)
 num_timesteps = matrix.shape[0]
@@ -90,7 +90,7 @@ t = time_array_to_years(datetimes)
 x = np.array(range(num_transects))
 
 ##setting the random noise amount, here it is +/- 20m
-noise_val = 20
+noise_val = 10
 
 ##getting a random linear trend between -25 m/year and 25 m/year
 trend_val = random.uniform(-25, 25)
@@ -105,7 +105,7 @@ yearly_amplitude = random.uniform(0,20)
 decadal_amplitude = random.uniform(0,20)
 
 ##randomly selecting a percent of the time periods to throw gaps in
-t_gap_frac = 0.25
+t_gap_frac = 0.10
 max_nans = int(t_gap_frac*len(t))
 num_nans = random.randint(0, max_nans)
 nan_idxes = random.sample(range(len(t)), num_nans)
@@ -128,7 +128,7 @@ for i in range(num_timesteps):
     matrix[:,i] = apply_NANs(matrix[:,i], nan_idxes)
     
 ##Plot timeseries
-plt.rcParams["figure.figsize"] = (14,4)
+plt.rcParams["figure.figsize"] = (12,4)
 plt.plot(datetimes, matrix[:,0], '--o', c='k', linewidth=1, markersize=1)
 plt.xlim(min(datetimes), max(datetimes))
 plt.ylim(np.nanmin(matrix[:,0]), np.nanmax(matrix[:,0]))
@@ -167,13 +167,17 @@ plt.close()
 
 
 ###Seasonal Trend Decomposition with Loess
+###Might have screwed this up??
 periods_years = [10, 1, 0.5]
 periods_dt = [int(a*365/dt) for a in periods_years]
+
+##Another fateful decision here, how to interpolate the timeseries???
 data = pd.DataFrame(data=matrix[:,0], index=datetimes).interpolate(method='linear')
+
+##More thought needed here
 res = MSTL(data,
            periods=periods_dt,
-           #windows=[101, 101, 101],
-           iterate=10).fit()
+           iterate=3).fit()
 res.plot()
 plt.tight_layout()
 plt.savefig('stdwl.png')
