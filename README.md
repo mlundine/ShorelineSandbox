@@ -7,10 +7,23 @@ Help wanted...
 
 # Road Map
 
-1. Generate synthetic timeseries matrices that mimic satellite shoreline data.
+Part 1:
 
-2. See how much noise and data gaps we can add until we can't decompose the signal properly. Determine best practices for timeseries interpolation.
+Make a bunch of synthetic timeseries with known processes input.
 
-3. Train data-driven models to forecast the synthetic timeseries. See what causes this to succeed/fail.
+See how much noise and data gaps we can add until any meaning is lost.
 
-4. Use what we learn and apply to actual satellite shoreline timeseries data.
+Part 2:
+
+Similarly, make a bunch of synthetic timeseries with known processes input
+
+See how much noise and data gaps we can add until an ML model fails at producing accurate predictions.
+
+Part 3:
+
+Look at actual satellite-derived shoreline data and see where on the spectrum it falls. Try to identify necessary areas to improve.
+
+Part 4:
+
+Can we reproduce Cosmos-Coast through machine learning?
+
