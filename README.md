@@ -5,6 +5,18 @@ Can we see more in these datasets currently other than big trends?
 
 Help wanted...
 
+Goal: Identify areas where improvements in satellite derived shoreline data are needed to capture processes and build better predictive models.
+
+Questions: 
+
+1. Can we define a set of well-thought-out analysis tools that treat these datasets rigorously? 
+
+2. Given the current state of satellite derived shoreline data, what is the smallest scale (temporally and spatially) that we can investigate?
+
+3. Can a data-driven model be of any use for current satellite shoreline data?
+
+4. Can we identify areas to improve these datasets?
+
 # Part 1: Processing Cookbook (time domain)
 
 1. Resample timeseries to minimum, average, or maximum time delta (temporal spacing of timeseries). My gut is to go with the maximum so we aren't creating data. If we go with minimum or average then linearly interpolate the values to get rid of NaNs.
@@ -33,6 +45,8 @@ See how much noise and data gaps we can add until any meaning is lost.
 
 Look at actual satellite-derived shoreline data and see where on the spectrum it falls. Try to identify necessary areas to improve.
 
+Some things we should estimate: what is the average amount of missing timestamps in SDS data? How does this vary through time?
+
 # Part 5:
 
 Similarly, make a bunch of synthetic timeseries with known processes input
@@ -40,6 +54,7 @@ Similarly, make a bunch of synthetic timeseries with known processes input
 See how much noise and data gaps we can add until an ML model fails at producing accurate predictions.
 
 Compare with actual satellite derived shoreline data.
+
 
 
 
