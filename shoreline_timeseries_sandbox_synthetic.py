@@ -8,8 +8,6 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import datetime
 import random
-from statsmodels.tsa.seasonal import STL
-from statsmodels.tsa.seasonal import MSTL
 import pandas as pd
 
 def time_array_to_years(datetimes):
@@ -37,7 +35,6 @@ def linear_trend(t, trend_val):
     y = trend_val*t
     return y
 
-
 def sine_pattern(t, A, period_years):
     """
     Applies seasonal pattern of random magnitude to trace
@@ -45,7 +42,6 @@ def sine_pattern(t, A, period_years):
     """
     y = A*np.sin(((2*np.pi*t)/period_years))
     return y
-
 
 def enso_pattern(t, amplitudes, periods):
     """
