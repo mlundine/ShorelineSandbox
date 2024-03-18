@@ -96,10 +96,10 @@ t = time_array_to_years(datetimes)
 x = np.array(range(num_transects))
 
 ##setting the random noise amount, here it is +/- 20m
-noise_val = 10
+noise_val = 20
 
 ##getting a random linear trend between -25 m/year and 25 m/year
-trend_val = -1#random.uniform(-25, 25)
+trend_val = random.uniform(-25, 25)
 
 ##getting a random amplitude for the 6 month cycle between 0 and 20 m
 six_month_amplitude = random.uniform(0,20)
@@ -114,9 +114,8 @@ decadal_amplitude = random.uniform(0,20)
 enso_amplitudes = [random.uniform(0,20) for _ in range(10)]
 enso_periods = [random.uniform(3, 7) for _ in range(10)]
 
-
 ##randomly selecting a percent of the time periods to throw gaps in
-t_gap_frac = 0.10
+t_gap_frac = 0.1
 max_nans = int(t_gap_frac*len(t))
 num_nans = random.randint(0, max_nans)
 nan_idxes = random.sample(range(len(t)), num_nans)
@@ -125,9 +124,9 @@ nan_idxes = random.sample(range(len(t)), num_nans)
 for i in range(num_transects):
     for j in range(num_timesteps):
         ##Linear trend + six month cycle + yearly cycle + decadal cycle
-        matrix[i,j] = sum([linear_trend(t[i], trend_val)*j,
-                           sine_pattern(t[i], six_month_amplitude, 0.5)*j,
-                           enso_pattern(t[i], enso_amplitudes, enso_periods)*j
+        matrix[i,j] = sum([linear_trend(t[i], trend_val),
+                           sine_pattern(t[i], six_month_amplitude, 1),
+                           enso_pattern(t[i], enso_amplitudes, enso_periods)
                            ]
                           )
         ##Add random noise to each position
@@ -142,10 +141,15 @@ plt.rcParams["figure.figsize"] = (12,4)
 plt.plot(datetimes, matrix[:,0], '--o', c='k', linewidth=1, markersize=1)
 plt.xlim(min(datetimes), max(datetimes))
 plt.ylim(np.nanmin(matrix[:,0]), np.nanmax(matrix[:,0]))
-plt.tight_layout()
 plt.xlabel('Time (UTC)')
 plt.ylabel('Cross-Shore Position (m)')
+plt.tight_layout()
 plt.savefig('timeseries.png')
+
+df = pd.DataFrame({'date':datetimes,
+                   'position':matrix[:,0]})
+
+df.to_csv('test.csv', index=False)
 
 ##This is for plotting the matrix
 y_lims = [datetimes[0], datetimes[-1]]

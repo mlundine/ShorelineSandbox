@@ -13,11 +13,13 @@ from statsmodels.tsa.seasonal import MSTL
 import pandas as pd
 from statsmodels.tsa.stattools import adfuller
 from statsmodels.tsa.stattools import grangercausalitytests
+from scipy.optimize import leastsq
+import os
+
 
 def adf_test(timeseries):
     """
     Checks for stationarity (lack of trend) in timeseries
-    I hate hypothesis testing!!!!!!!!!!!!
     significance value here is going to be 0.05
     If p-value > 0.05 then we are interpeting the tiemseries as stationary
     otherwise it's interpreted as non-stationary
@@ -39,13 +41,15 @@ def adf_test(timeseries):
     )
     for key, value in dftest[4].items():
         dfoutput["Critical Value (%s)" % key] = value
-    if df['p-value'] > 0.05:
+    if dfoutput['p-value'] < 0.05:
         stationary_bool = True
+        print('Stationary, p-value = ' + str(np.round(dfoutput['p-value'],3)))
     else:
         stationary_bool = False
+        print('Non-stationary, p-value = ' + str(np.round(dfoutput['p-value'],3)))
     return stationary_bool
 
-def get_linear_trend(df, trend_plot_path):
+def get_linear_trend(df):
     """
     LLS on single transect timeseries
     inputs:
@@ -56,12 +60,12 @@ def get_linear_trend(df, trend_plot_path):
     x: datetimes in years
     """
     
-    datetimes = np.array(df['date'])
+    datetimes = np.array(df.index)
     shore_pos = np.array(df['position'])
     datetimes_seconds = [None]*len(datetimes)
     initial_time = datetimes[0]
-    for i in range(len(filter_df)):
-        t = filter_df['dates'].iloc[i]
+    for i in range(len(df)):
+        t = df.index[i]
         dt = t-initial_time
         dt_sec = dt.total_seconds()
         datetimes_seconds[i] = dt_sec
@@ -70,6 +74,7 @@ def get_linear_trend(df, trend_plot_path):
     x = datetimes_years
     y = shore_pos
     lls_result = stats.linregress(x,y)
+    print(lls_result)
     return lls_result, x
 
 def de_trend_timeseries(df, lls_result, x):
@@ -83,26 +88,31 @@ def de_trend_timeseries(df, lls_result, x):
     fitx = np.linspace(min(x),max(x),len(x))
     fity = slope*fitx + intercept
 
-    df['position'] = y - fit1y
-    return df
+    detrend = y - fity
+    new_df = pd.DataFrame({'position':detrend},
+                          index=df.index)
+    return new_df
 
 def de_mean_timeseries(df):
     """
     de-means the shoreline timeseries
     """
     mean_pos = np.mean(df['position'])
-    df['position'] = df['position']-mean_pos
-    return df
+    new_pos = df['position']-mean_pos
+    new_df = pd.DataFrame({'position':new_pos.values},
+                          index=df.index)
+    return new_df
     
 def get_shoreline_data(csv_path):
     """
     Reads and reformats the timeseries into a pandas dataframe with datetime index
     """
     df = pd.read_csv(csv_path)
-    df['date'] = pd.to_datetime(df['date'], format='%Y-%m-%d %H:%M:%S')
+    df = df.replace(r'^\s*$', np.nan, regex=True)
+    dates = pd.to_datetime(df['date'], format='%Y-%m-%d %H:%M:%S')
 
-    new_df = pd.DataFrame({'position':df['position']},
-                          index=df['date'])
+    new_df = pd.DataFrame({'position':df['position'].values},
+                          index=dates.values)
     return new_df
 
 def compute_avg_and_max_time_delta(df):
@@ -115,8 +125,9 @@ def compute_avg_and_max_time_delta(df):
     datetimes = df.index
     timedeltas = [datetimes[i-1]-datetimes[i] for i in range(1, len(datetimes))]
     avg_timedelta = sum(timedeltas, datetime.timedelta(0)) / len(timedeltas)
-    max_timedelta = max(timedeltas)
-    return avg_timedelta.days, max_timedelta.days
+    avg_timedelta = abs(avg_timedelta)
+    max_timedelta = max(abs(np.array(timedeltas)))
+    return avg_timedelta, max_timedelta
 
 def resample_timeseries(df, timedelta):
     """
@@ -137,7 +148,7 @@ def plot_autocorrelation(output_folder,
                          df):
     """
     This computes and plots the autocorrelation
-    Autocorrelation tells you how much a timeseris is correlated with a lagged version of itself.
+    Autocorrelation tells you how much a timeseries is correlated with a lagged version of itself.
     Useful for distinguishing timeseries with patterns vs random timeseries
     For example, for a timeseries sampled every 1 month,
     if you find a strong positive correlation (close to +1) at a lag of 12,
@@ -178,46 +189,50 @@ def compute_approximate_entropy(U, m, r):
     
 def make_plots(output_folder,
                name,
-               approximate_entropy
                df,
                df_resampled,
                df_no_nans,
                df_de_meaned,
+               df_de_trend_bool=False,
                df_de_trend=None):
     """
     Making timeseries plots of data, vertically stacked
     """
     fig_save = os.path.join(output_folder, name+'timeseries.png')
-    
-    if df_de_trend = None:
+    plt.rcParams['lines.linewidth'] = 1
+    plt.rcParams['lines.markersize'] = 1
+    if df_de_trend_bool == False:
         plt.rcParams["figure.figsize"] = (16,12)
-        plt.suptitle(Name + '\nApproximate Entropy = ' + str(np.round(approximate_entropy, 3)))
         ##Raw 
         plt.subplot(4,1,1)
+        plt.suptitle(name)
         plt.plot(df.index, df['position'], '--o', color='k', label='Raw')
         plt.xlim(min(df.index), max(df.index))
-        plt.ylim(np.nanmin(df['position']), np.nanmin(df['position']))
+        plt.ylim(np.nanmin(df['position']), np.nanmax(df['position']))
         plt.ylabel('Cross-Shore Position (m)')
         plt.xticks([],[])
+        plt.legend()
         ##Resampled
         plt.subplot(4,1,2)
         plt.plot(df_resampled.index, df_resampled['position'], '--o', color='k', label='Resampled')
         plt.xlim(min(df_resampled.index), max(df_resampled.index))
-        plt.ylim(np.nanmin(df_resampled['position']), np.nanmin(df_resampled['position']))
+        plt.ylim(np.nanmin(df_resampled['position']), np.nanmax(df_resampled['position']))
         plt.ylabel('Cross-Shore Position (m)')
         plt.xticks([],[])
+        plt.legend()
         ##Interpolated
         plt.subplot(4,1,3)
-        plt.plot(df_no_nans.index, df_no_nans['position'], '--o', color='k', label='Resampled')
+        plt.plot(df_no_nans.index, df_no_nans['position'], '--o', color='k', label='Interpolated')
         plt.xlim(min(df_no_nans.index), max(df_no_nans.index))
-        plt.ylim(np.nanmin(df_no_nans['position']), np.nanmin(df_no_nans['position']))
+        plt.ylim(np.nanmin(df_no_nans['position']), np.nanmax(df_no_nans['position']))
         plt.ylabel('Cross-Shore Position (m)')
         plt.xticks([],[])
+        plt.legend()
         ##De-meaned
         plt.subplot(4,1,4)
-        plt.plot(df_de_meaned.index, df_de_meaned['position'], '--o', color='k', label='Resampled')
+        plt.plot(df_de_meaned.index, df_de_meaned['position'], '--o', color='k', label='De-Meaned')
         plt.xlim(min(df_de_meaned.index), max(df_de_meaned.index))
-        plt.ylim(np.nanmin(df_de_meaned['position']), np.nanmin(df_de_meaned['position']))
+        plt.ylim(np.nanmin(df_de_meaned['position']), np.nanmax(df_de_meaned['position']))
         plt.ylabel('Cross-Shore Position (m)')
         plt.xlabel('Time (UTC)')
         plt.minorticks_on()
@@ -226,45 +241,48 @@ def make_plots(output_folder,
         plt.savefig(fig_save, dpi=300)
         plt.close()
     else:
-        plt.rcParams["figure.figsize"] = (16,15)
-        plt.suptitle(Name + '\nApproximate Entropy = ' + str(np.round(approximate_entropy, 3)))
+        plt.rcParams["figure.figsize"] = (16,16)
         ##Raw 
         plt.subplot(5,1,1)
+        plt.suptitle(name)
         plt.plot(df.index, df['position'], '--o', color='k', label='Raw')
         plt.xlim(min(df.index), max(df.index))
-        plt.ylim(np.nanmin(df['position']), np.nanmin(df['position']))
+        plt.ylim(np.nanmin(df['position']), np.nanmax(df['position']))
         plt.ylabel('Cross-Shore Position (m)')
         plt.xticks([],[])
+        plt.legend()
         ##Resampled
         plt.subplot(5,1,2)
         plt.plot(df_resampled.index, df_resampled['position'], '--o', color='k', label='Resampled')
         plt.xlim(min(df_resampled.index), max(df_resampled.index))
-        plt.ylim(np.nanmin(df_resampled['position']), np.nanmin(df_resampled['position']))
+        plt.ylim(np.nanmin(df_resampled['position']), np.nanmax(df_resampled['position']))
         plt.ylabel('Cross-Shore Position (m)')
         plt.xticks([],[])
+        plt.legend()
         ##Interpolated
         plt.subplot(5,1,3)
         plt.plot(df_no_nans.index, df_no_nans['position'], '--o', color='k', label='Interpolated')
         plt.xlim(min(df_no_nans.index), max(df_no_nans.index))
-        plt.ylim(np.nanmin(df_no_nans['position']), np.nanmin(df_no_nans['position']))
+        plt.ylim(np.nanmin(df_no_nans['position']), np.nanmax(df_no_nans['position']))
         plt.ylabel('Cross-Shore Position (m)')
         plt.xticks([],[])
-        ##De-meaned
+        plt.legend()
+        ##De-trended
         plt.subplot(5,1,4)
-        plt.plot(df_de_meaned.index, df_de_meaned['position'], '--o', color='k', label='De-Meaned')
-        plt.xlim(min(df_de_meaned.index), max(df_de_meaned.index))
-        plt.ylim(np.nanmin(df_de_meaned['position']), np.nanmin(df_de_meaned['position']))
-        plt.ylabel('Cross-Shore Position (m)')
-        plt.xticks([],[])
-        ##De-Trended
-        plt.subplot(5,1,4)
-        plt.plot(df_de_trend.index, df_de_trend['position'], '--o', color='k', label='De-Meaned')
+        plt.plot(df_de_trend.index, df_de_trend['position'], '--o', color='k', label='De-Trended')
         plt.xlim(min(df_de_trend.index), max(df_de_trend.index))
-        plt.ylim(np.nanmin(df_de_trend['position']), np.nanmin(df_de_trend['position']))
+        plt.ylim(np.nanmin(df_de_trend['position']), np.nanmax(df_de_trend['position']))
         plt.ylabel('Cross-Shore Position (m)')
         plt.xlabel('Time (UTC)')
-        plt.xticks([],[])
         plt.minorticks_on()
+        plt.legend()
+        ##De-meaned
+        plt.subplot(5,1,5)
+        plt.plot(df_de_meaned.index, df_de_meaned['position'], '--o', color='k', label='De-Meaned')
+        plt.xlim(min(df_de_meaned.index), max(df_de_meaned.index))
+        plt.ylim(np.nanmin(df_de_meaned['position']), np.nanmax(df_de_meaned['position']))
+        plt.ylabel('Cross-Shore Position (m)')
+        plt.xticks([],[])
         plt.legend()
         plt.tight_layout()
         plt.savefig(fig_save, dpi=300)
@@ -283,6 +301,7 @@ def main(csv_path,
     output_folder (str): path to save outputs to
     """
     ##Step 1: Load in data
+    df = pd.read_csv(csv_path)
     df = get_shoreline_data(csv_path)
     
     ##Step 2: Compute average and max time delta
@@ -290,19 +309,18 @@ def main(csv_path,
 
     ##Step 3: Resample timeseries to the maximum timedelta
     df_resampled = resample_timeseries(df, max_timedelta)
+    print('New Time Delta: ' + str(max_timedelta))
 
     ##Step 4: Fill NaNs
     df_no_nans = fill_nans(df_resampled)
-
-    ##Step 5: De-mean the timeseries
-    df_de_meaned = de_mean(df_no_nans)
     
-    ##Step 6: Check for stationarity with ADF test
-    stationary_bool = adf_test(df_de_meaned)
+    ##Step 5: Check for stationarity with ADF test
+    stationary_bool = adf_test(df_no_nans['position'])
     
-    ##Step 7a: If timeseries stationary, compute autocorrelation and approximate entropy
+    ##Step 6a: If timeseries stationary, de-mean, compute autocorrelation and approximate entropy
     ##Then make plots
     if stationary_bool == True:
+        df_de_meaned = de_mean_timeseries(df_no_nans)
         plot_autocorrelation(output_folder,
                              name,
                              df_de_meaned)
@@ -311,39 +329,39 @@ def main(csv_path,
                                                           np.std(df_de_meaned['position']))
         make_plots(output_folder,
                    name,
-                   approximate_entropy,
                    df,
                    df_resampled,
                    df_no_nans,
                    df_de_meaned,
-                   df_de_trend=None)
+                   df_de_trend_bool=False)
         
-    ##Step 7b: If timeseries non-stationary, compute trend, de-trend, compute autocorrelation and approximate entropy
+    ##Step 6b: If timeseries non-stationary, compute trend, de-trend, de-mean, compute autocorrelation and approximate entropy
     ##Then make plots
     else:
-        trend_result, x = get_trend(df_de_meaned)
-        df_de_trend = de_trend_timeseries(df_de_meaned, trend_result, x)
+        trend_result, x = get_linear_trend(df_no_nans)
+        df_de_trend = de_trend_timeseries(df_no_nans, trend_result, x)
+        ##Step 5: De-mean the timeseries
+        df_de_meaned = de_mean_timeseries(df_de_trend)
         plot_autocorrelation(output_folder,
                              name,
                              df_de_trend)
         approximate_entropy = compute_approximate_entropy(df_de_meaned['position'],
                                                           2,
                                                           np.std(df_de_trend['position']))
+        print('Approximate Entropy = ' + str(np.round(approximate_entropy, 3)))
         make_plots(output_folder,
                    name,
-                   approximate_entropy,
                    df,
                    df_resampled,
                    df_no_nans,
                    df_de_meaned,
+                   df_de_trend_bool=True,
                    df_de_trend=df_de_trend)
 
-    ##Step 8: Granger tests to see if other datasets are good predictors (e.g., waves, ENSO, NAO)
-##    granger_result = grangercausalitytests(df['position'],
-##                                           other_dataset,
-##                                           maxlag=2)
         
-    
+main(r'C:\Users\mlundine\OneDrive - DOI\MarkLundine\Code\USGS\ShorelineSandbox\ShorelineSandbox\test.csv',
+     r'C:\Users\mlundine\OneDrive - DOI\MarkLundine\Code\USGS\ShorelineSandbox\ShorelineSandbox\tests',
+     'mytest')
 
 
 
