@@ -23,17 +23,17 @@ and then de-trend the timeseries. Then de-mean, do autocorrelation, and approxim
 
 TO-DO
 
-Part 3:
+# Part 3:
 
 Make a bunch of synthetic timeseries with known processes input.
 
 See how much noise and data gaps we can add until any meaning is lost.
 
-Part 4:
+# Part 4:
 
 Look at actual satellite-derived shoreline data and see where on the spectrum it falls. Try to identify necessary areas to improve.
 
-Part 5:
+# Part 5:
 
 Similarly, make a bunch of synthetic timeseries with known processes input
 
