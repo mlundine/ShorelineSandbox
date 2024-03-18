@@ -12,8 +12,6 @@ from statsmodels.tsa.seasonal import STL
 from statsmodels.tsa.seasonal import MSTL
 import pandas as pd
 from statsmodels.tsa.stattools import adfuller
-from statsmodels.tsa.stattools import grangercausalitytests
-from scipy.optimize import leastsq
 import os
 
 
@@ -115,7 +113,7 @@ def get_shoreline_data(csv_path):
                           index=dates.values)
     return new_df
 
-def compute_avg_and_max_time_delta(df):
+def compute_time_delta(df, which_timedelta):
     """
     Computes average and max time delta for timeseries rounded to days
     Need to drop the nan rows to compute these
@@ -126,8 +124,16 @@ def compute_avg_and_max_time_delta(df):
     timedeltas = [datetimes[i-1]-datetimes[i] for i in range(1, len(datetimes))]
     avg_timedelta = sum(timedeltas, datetime.timedelta(0)) / len(timedeltas)
     avg_timedelta = abs(avg_timedelta)
+    min_timedelta = min(abs(np.array(timedeltas)))
     max_timedelta = max(abs(np.array(timedeltas)))
-    return avg_timedelta, max_timedelta
+
+    if which_timedelta == 'minimum':
+        return_timedelta = min_timedelta
+    elif which_timedelta == 'average':
+        return_timedelta = avg_timedelta
+    else:
+        return_timedelta = max_timedelta
+    return return_timedelta
 
 def resample_timeseries(df, timedelta):
     """
@@ -290,7 +296,8 @@ def make_plots(output_folder,
     
 def main(csv_path,
          output_folder,
-         name):
+         name,
+         which_timedelta):
     """
     Timeseries analysis for satellite shoreline data
     inputs:
@@ -305,11 +312,11 @@ def main(csv_path,
     df = get_shoreline_data(csv_path)
     
     ##Step 2: Compute average and max time delta
-    avg_timedelta, max_timedelta = compute_avg_and_max_time_delta(df)
+    new_timedelta = compute_time_delta(df, which_timedelta)
 
     ##Step 3: Resample timeseries to the maximum timedelta
-    df_resampled = resample_timeseries(df, max_timedelta)
-    print('New Time Delta: ' + str(max_timedelta))
+    df_resampled = resample_timeseries(df, new_timedelta)
+    print('New Time Delta (' + which_timedelta + ') : ' + str(new_timedelta))
 
     ##Step 4: Fill NaNs
     df_no_nans = fill_nans(df_resampled)
@@ -357,11 +364,6 @@ def main(csv_path,
                    df_de_meaned,
                    df_de_trend_bool=True,
                    df_de_trend=df_de_trend)
-
-        
-main(r'C:\Users\mlundine\OneDrive - DOI\MarkLundine\Code\USGS\ShorelineSandbox\ShorelineSandbox\test.csv',
-     r'C:\Users\mlundine\OneDrive - DOI\MarkLundine\Code\USGS\ShorelineSandbox\ShorelineSandbox\tests',
-     'mytest')
 
 
 
