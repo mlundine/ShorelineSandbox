@@ -42,11 +42,21 @@ def sine_pattern(t, A, period_years):
     """
     Applies seasonal pattern of random magnitude to trace
     y = A*sin((2pi/L)*x)
-    L = 0.5 years or 6 months
     """
     y = A*np.sin(((2*np.pi*t)/period_years))
     return y
-    
+
+
+def enso_pattern(t, amplitudes, periods):
+    """
+    Enso-esque pattern mean of a bunch of sine waves with periods between 3 and 7 years
+    """
+    y = [None]*len(amplitudes)
+    for i in range(len(y)):
+        y[i] = amplitudes[i]*np.sin(2*np.pi*t/periods[i])
+    y = np.array(y)
+    return np.mean(y)
+
 def noise(y, noise_val):
     """
     Applies random noise to trace
@@ -81,7 +91,7 @@ def make_matrix(dt):
     return shoreline_matrix, datetimes
 
 ##Initialize stuff
-random.seed(0) #uncomment if you want to keep the randomness the same and play with hard-coded values
+##random.seed(0) #uncomment if you want to keep the randomness the same and play with hard-coded values
 dt = 12 #revisit time in days
 matrix, datetimes = make_matrix(dt)
 num_timesteps = matrix.shape[0]
@@ -93,7 +103,7 @@ x = np.array(range(num_transects))
 noise_val = 10
 
 ##getting a random linear trend between -25 m/year and 25 m/year
-trend_val = random.uniform(-25, 25)
+trend_val = -1#random.uniform(-25, 25)
 
 ##getting a random amplitude for the 6 month cycle between 0 and 20 m
 six_month_amplitude = random.uniform(0,20)
@@ -103,6 +113,11 @@ yearly_amplitude = random.uniform(0,20)
 
 ##getting a random amplitude for the decadal cycle between 0 and 20 m
 decadal_amplitude = random.uniform(0,20)
+
+##making ENSO-esque amplitudes
+enso_amplitudes = [random.uniform(0,20) for _ in range(10)]
+enso_periods = [random.uniform(3, 7) for _ in range(10)]
+
 
 ##randomly selecting a percent of the time periods to throw gaps in
 t_gap_frac = 0.10
@@ -114,10 +129,9 @@ nan_idxes = random.sample(range(len(t)), num_nans)
 for i in range(num_transects):
     for j in range(num_timesteps):
         ##Linear trend + six month cycle + yearly cycle + decadal cycle
-        matrix[i,j] = sum([linear_trend(t[i], trend_val),
-                           sine_pattern(t[i], decadal_amplitude, 10),
-                           sine_pattern(t[i], yearly_amplitude, 1),
-                           sine_pattern(t[i], six_month_amplitude, 0.5)
+        matrix[i,j] = sum([linear_trend(t[i], trend_val)*j,
+                           sine_pattern(t[i], six_month_amplitude, 0.5)*j,
+                           enso_pattern(t[i], enso_amplitudes, enso_periods)*j
                            ]
                           )
         ##Add random noise to each position
@@ -166,22 +180,6 @@ plt.savefig('matrix.png')
 plt.close()
 
 
-###Seasonal Trend Decomposition with Loess
-###Might have screwed this up??
-periods_years = [10, 1, 0.5]
-periods_dt = [int(a*365/dt) for a in periods_years]
-
-##Another fateful decision here, how to interpolate the timeseries???
-data = pd.DataFrame(data=matrix[:,0], index=datetimes).interpolate(method='linear')
-
-##More thought needed here
-res = MSTL(data,
-           periods=periods_dt,
-           iterate=3).fit()
-res.plot()
-plt.tight_layout()
-plt.savefig('stdwl.png')
-plt.close()
 
 
 
