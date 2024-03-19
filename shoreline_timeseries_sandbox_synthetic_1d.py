@@ -94,7 +94,6 @@ def make_data(noise_val,
               save_name):
     ##Initialize stuff
     #random.seed(0) #uncomment if you want to keep the randomness the same and play with hard-coded values
-    dt = 12 #revisit time in days
     matrix, datetimes = make_matrix(dt)
     num_timesteps = matrix.shape[0]
     t = time_array_to_years(datetimes)
