@@ -150,6 +150,9 @@ I am making a synthetic timeseries that follows the below equation:
 * The yearly pattern will require an amplitude. This is a sine wave A*sin(2*pi*t/L). L would be equal to 1 year.
 * The noise will require an amplitude (e.g., +/- 20 m).
 
+Example:
+![example_timeseries](/test1.png)
+
 So we can think of this as trying to model a shoreline with a long term trend and a summer vs. winter profile with some random noise.
 
 The noise should probably vary between 10 and 30 m to simulate satellite-derived shoreline uncertainty.
