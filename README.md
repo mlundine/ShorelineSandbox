@@ -19,12 +19,18 @@ Questions:
 
 # Part 1: Processing Cookbook (time domain)
 
+Use shoreline_timeseries_analysis_single.py
+
+Libraries required (Python 3.7, numpy, matplotlib, datetime, random, scipy, pandas, statsmodels, os, csv)
+
 	main(csv_path,
              output_folder,
              name,
              which_timedelta):
     	"""
     	Timeseries analysis for satellite shoreline data
+	Will save spatial series plot (raw, resampled, de-trended, de-meaned) and autocorrelation plot.
+	Will also output analysis results to a csv (result.csv)
     	inputs:
     	csv_path (str): path to the shoreline timeseries csv
     	should have columns 'date' and 'position'
@@ -35,7 +41,7 @@ Questions:
     	which_timedelta (str): 'minimum' 'average' or 'maximum', this is what the timeseries is resampled at
     	outputs:
     	timeseries_analysis_result (dict): results of this cookbook
-
+	"""
 1. Resample timeseries to minimum, average, or maximum time delta (temporal spacing of timeseries). My gut is to go with the maximum so we aren't creating data. If we go with minimum or average then linearly interpolate the values to get rid of NaNs.
 
 2. Check if timeseries is stationary with ADF test. We'll use a p-value of 0.05. If we get a p-value greater than this then we are interpreting
@@ -65,7 +71,31 @@ the timeseries as non-stationary (there is a temporal trend).
 
 # Part 2: Processing Cookbook (spatial domain)
 
-TO-DO
+Use shoreline_timeseries_analysis_single_spatial.py
+
+Libraries required (Python 3.7, numpy, matplotlib, datetime, random, scipy, pandas, statsmodels, os, csv)
+
+	main(csv_path,
+	     output_folder,
+             name,
+             transect_spacing,
+             which_spacedelta):
+	"""
+    	Spatial analysis for satellite shoreline data
+	Will save timeseries plot (raw, resampled, de-trended, de-meaned) and autocorrelation plot.
+	Will also output analysis results to a csv (result.csv)
+    	inputs:
+    	csv_path (str): path to the shoreline timeseries csv
+    	should have columns 'transect_id' and 'position'
+    	where transect_id contains the transect id, transects should be evenly spaced!!
+    	position is the cross-shore position of the shoreline (in m)
+    	output_folder (str): path to save outputs to
+    	name (str): a site name
+    	transect_spacing (int): transect spacing in meters
+    	which_spacedelta (str): 'minimum' 'average' or 'maximum', this is the new longshore spacing to sample at
+	outputs:
+    	spatial_series_analysis_result (dict): results of this cookbook
+    	"""
 
 # Part 3:
 

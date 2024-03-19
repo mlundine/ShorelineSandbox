@@ -99,10 +99,10 @@ x = np.array(range(num_transects))
 noise_val = 20
 
 ##getting a random linear trend between -25 m/year and 25 m/year
-trend_val = 0#random.uniform(-25, 25)
+trend_val = random.uniform(-25, 25)
 
 ##getting a random amplitude for the 6 month cycle between 0 and 20 m
-six_month_amplitude = 0#random.uniform(0,20)
+six_month_amplitude = random.uniform(0,20)
 
 ##getting a random amplitude for the yearly cycle between 0 and 20 m
 yearly_amplitude = random.uniform(0,20)
@@ -124,7 +124,7 @@ nan_idxes = random.sample(range(len(t)), num_nans)
 for i in range(num_transects):
     for j in range(num_timesteps):
         ##Linear trend + six month cycle + yearly cycle + decadal cycle
-        matrix[i,j] = sum([linear_trend(t[i], trend_val)+100*np.sin(2*np.pi*j/5),
+        matrix[i,j] = sum([linear_trend(t[i], trend_val),
                            sine_pattern(t[i], six_month_amplitude, 1),
                            #enso_pattern(t[i], enso_amplitudes, enso_periods)
                            ]
@@ -146,10 +146,10 @@ plt.ylabel('Cross-Shore Position (m)')
 plt.tight_layout()
 plt.savefig('timeseries.png')
 
-df = pd.DataFrame({'transect_id':x,
-                   'position':matrix[50,:]})
+df = pd.DataFrame({'date':datetimes,
+                   'position':matrix[:,0]})
 
-df.to_csv('spacetest1.csv', index=False)
+df.to_csv('timetest1.csv', index=False)
 
 ##This is for plotting the matrix
 y_lims = [datetimes[0], datetimes[-1]]
