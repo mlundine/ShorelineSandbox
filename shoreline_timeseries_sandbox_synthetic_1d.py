@@ -99,7 +99,6 @@ def make_data(noise_val,
     t = time_array_to_years(datetimes)
 
     ##randomly selecting a percent of the time periods to throw gaps in
-    t_gap_frac = 0.1
     max_nans = int(t_gap_frac*len(t))
     num_nans = random.randint(0, max_nans)
     nan_idxes = random.sample(range(len(t)), num_nans)

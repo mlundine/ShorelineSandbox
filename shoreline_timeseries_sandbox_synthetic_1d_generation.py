@@ -123,7 +123,8 @@ def make_data(noise_val,
               r'm/year    Yearly Amplitude = ' +
               str(np.round(yearly_amplitude,2)) + r'm    dt = ' +
               str(dt) + r' days    Missing timestamps = ' +
-              str(t_gap_frac*100)+'%')
+              str(t_gap_frac*100)+'%'+
+              '    Noise amount = ' + str(noise_val) + 'm')
     plt.plot(df['date'], df['position'], '--o', color='k', markersize=1, linewidth=1)
     plt.xlim(min(df['date']), max(df['date']))
     plt.ylim(min(df['position']), max(df['position']))
