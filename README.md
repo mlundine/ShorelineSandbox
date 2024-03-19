@@ -66,7 +66,7 @@ the timeseries as non-stationary (there is a temporal trend).
 	* 'r_sq': the r^2 value from the linear trend estimation, unitless
 	* 'autocorr_max': the maximum value from the autocorrelation estimation, this code computes the maximum of the absolute value of the 			autocorrelation
 	* 'lag_max': the lag that corresponds to the maximum of the autocorrelation, something of note here: if you are computing autocorrelation on
-	a signal with a period of 1 year, then here the lag_max will be half a year. Autocorrelation in this case should be -1 at a half-year lag and 		+1 at a year lag. Since I do the max calculation on the absolute value fo the autocorrelation, you get lag_max at the maximum negative 			correlation.
+	a signal with a period of 1 year, then here the lag_max will be half a year. Autocorrelation in this case should be -1 at a half-year lag and 		+1 at a year lag. Since I do the max calculation on the absolute value of the autocorrelation, you get lag_max at the maximum negative 			correlation.
 	* 'new_timedelta': this is the new time-spacing for the resampled timeseries
 	* 'snr_no_nans': a crude estimate of signal-to-noise ratio, here I just did the mean of the timeseries divided by the standard deviation
 	* 'approx_entropy': entropy estimate, values closer to 0 indicate predicatibility, values closer to 1 indicate disorder
@@ -124,7 +124,7 @@ the timeseries as non-stationary (there is a temporal trend).
 	* 'r_sq': the r^2 value from the linear trend estimation, unitless
 	* 'autocorr_max': the maximum value from the autocorrelation estimation, this code computes the maximum of the absolute value of the 			autocorrelation
 	* 'lag_max': the lag that corresponds to the maximum of the autocorrelation, something of note here: if you are computing autocorrelation on
-	a signal with a period of 1000m, then here the lag_max will be 500m. Autocorrelation in this case should be -1 at a 500m lag and 			+1 at a 1000m lag. Since I do the max calculation on the absolute value fo the autocorrelation, you get lag_max at the maximum negative 		correlation.
+	a signal with a period of 1000m, then here the lag_max will be 500m. Autocorrelation in this case should be -1 at a 500m lag and 			+1 at a 1000m lag. Since I do the max calculation on the absolute value of the autocorrelation, you get lag_max at the maximum negative 		correlation.
 	* 'new_spacedelta': this is the new longshore-spacing for the resampled timeseries (in m)
 	* 'snr_no_nans': a crude estimate of signal-to-noise ratio, here I just did the mean of the spatial series divided by the standard deviation
 	* 'approx_entropy': entropy estimate, values closer to 0 indicate predicatibility, values closer to 1 indicate disorder
