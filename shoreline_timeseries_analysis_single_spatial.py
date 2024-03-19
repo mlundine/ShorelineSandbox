@@ -15,7 +15,7 @@ from statsmodels.tsa.stattools import adfuller
 import os
 
 
-def adf_test(timeseries):
+def adf_test(series):
     """
     Checks for stationarity (lack of trend) in timeseries
     significance value here is going to be 0.05
@@ -27,7 +27,7 @@ def adf_test(timeseries):
     stationary_bool: if p-value > 0.05, return True, if p-value < 0.05 return False
     """
     print("Results of Dickey-Fuller Test:")
-    dftest = adfuller(timeseries, autolag="AIC")
+    dftest = adfuller(series, autolag="AIC")
     dfoutput = pd.Series(
         dftest[0:4],
         index=[
@@ -49,7 +49,8 @@ def adf_test(timeseries):
 
 def get_linear_trend(df):
     """
-    LLS on single transect timeseries
+    LLS on single longshore transect
+    ##todo
     inputs:
     df (pandas DataFrame): two columns, dates and cross-shore positions
     trend_plot_path (str): path to save plot to
@@ -58,18 +59,9 @@ def get_linear_trend(df):
     x: datetimes in years
     """
     
-    datetimes = np.array(df.index)
+    longshore = np.array(df.index)
     shore_pos = np.array(df['position'])
-    datetimes_seconds = [None]*len(datetimes)
-    initial_time = datetimes[0]
-    for i in range(len(df)):
-        t = df.index[i]
-        dt = t-initial_time
-        dt_sec = dt.total_seconds()
-        datetimes_seconds[i] = dt_sec
-    datetimes_seconds = np.array(datetimes_seconds)
-    datetimes_years = datetimes_seconds/(60*60*24*365)
-    x = datetimes_years
+    x = longshore
     y = shore_pos
     lls_result = stats.linregress(x,y)
     print(lls_result)
@@ -101,49 +93,52 @@ def de_mean_timeseries(df):
                           index=df.index)
     return new_df
     
-def get_shoreline_data(csv_path):
+def get_shoreline_data(csv_path, transect_spacing):
     """
-    Reads and reformats the timeseries into a pandas dataframe with datetime index
+    Reads and reformats the timeseries into a pandas dataframe with cross-shore position and longshore position
     """
     df = pd.read_csv(csv_path)
     df = df.replace(r'^\s*$', np.nan, regex=True)
-    dates = pd.to_datetime(df['date'], format='%Y-%m-%d %H:%M:%S')
+    transect_ids = df['transect_id']
+    longshore_position = np.arange(0, len(transect_ids)*transect_spacing, transect_spacing)
 
     new_df = pd.DataFrame({'position':df['position'].values},
-                          index=dates.values)
+                          index=longshore_position)
     return new_df
 
-def compute_time_delta(df, which_timedelta):
+def compute_time_delta(df, which_spacedelta):
     """
     Computes average and max time delta for timeseries rounded to days
     Need to drop the nan rows to compute these
     returns average and maximum timedeltas
     """
     df = df.dropna()
-    datetimes = df.index
-    timedeltas = [datetimes[i-1]-datetimes[i] for i in range(1, len(datetimes))]
-    avg_timedelta = sum(timedeltas, datetime.timedelta(0)) / len(timedeltas)
-    avg_timedelta = abs(avg_timedelta)
-    min_timedelta = min(abs(np.array(timedeltas)))
-    max_timedelta = max(abs(np.array(timedeltas)))
+    longshore_position = df.index
+    spacedeltas = [longshore_position[i-1]-longshore_position[i] for i in range(1, len(longshore_position))]
+    avg_spacedelta = sum(spacedeltas, spacedeltas[0])/len(spacedeltas)
+    avg_spacedelta = abs(avg_spacedelta)
+    min_spacedelta = min(abs(np.array(spacedeltas)))
+    max_spacedelta = max(abs(np.array(spacedeltas)))
 
-    if which_timedelta == 'minimum':
-        return_timedelta = min_timedelta
-    elif which_timedelta == 'average':
-        return_timedelta = avg_timedelta
+    if which_spacedelta == 'minimum':
+        return_spacedelta = min_spacedelta
+    elif which_spacedelta == 'average':
+        return_spacedelta = avg_spacedelta
     else:
-        return_timedelta = max_timedelta
-    return return_timedelta
+        return_spacedelta = max_spacedelta
+    return return_spacedelta
 
-def resample_timeseries(df, timedelta):
+def resample_timeseries(df, spacedelta):
     """
-    Resamples the timeseries according to the provided timedelta
+    todo
+    Resamples the timeseries according to the provided spacedelta
     """
-    new_df = df.resample(timedelta).mean()
+    new_df = df[df.index%spacedelta==0]
     return new_df
 
 def fill_nans(df):
     """
+    todo
     Fills nans in timeseries with linear interpolation, keep it simple student
     """
     new_df = df.interpolate(method='linear')
@@ -202,7 +197,7 @@ def make_plots(output_folder,
                df_de_trend_bool=False,
                df_de_trend=None):
     """
-    Making timeseries plots of data, vertically stacked
+    Making longshore plots of data, vertically stacked
     """
     fig_save = os.path.join(output_folder, name+'timeseries.png')
     plt.rcParams['lines.linewidth'] = 1
@@ -243,7 +238,7 @@ def make_plots(output_folder,
         plt.xlim(min(df_de_meaned.index), max(df_de_meaned.index))
         plt.ylim(np.nanmin(df_de_meaned['position']), np.nanmax(df_de_meaned['position']))
         plt.ylabel('Cross-Shore Position (m)')
-        plt.xlabel('Time (UTC)')
+        plt.xlabel('Longhsore Distance (m)')
         plt.minorticks_on()
         plt.legend()
         plt.minorticks_on()
@@ -264,7 +259,7 @@ def make_plots(output_folder,
         ##Resampled
         plt.subplot(5,1,2)
         plt.plot(df_resampled.index, df_resampled['position'], '--o', color='k', label='Resampled')
-        plt.xlim(min(df_resampled.index), max(df_resampled.index))
+        plt.xlim(min(df.index), max(df.index))
         plt.ylim(np.nanmin(df_resampled['position']), np.nanmax(df_resampled['position']))
         plt.ylabel('Cross-Shore Position (m)')
         plt.xticks([],[])
@@ -273,7 +268,7 @@ def make_plots(output_folder,
         ##Interpolated
         plt.subplot(5,1,3)
         plt.plot(df_no_nans.index, df_no_nans['position'], '--o', color='k', label='Interpolated')
-        plt.xlim(min(df_no_nans.index), max(df_no_nans.index))
+        plt.xlim(min(df.index), max(df.index))
         plt.ylim(np.nanmin(df_no_nans['position']), np.nanmax(df_no_nans['position']))
         plt.ylabel('Cross-Shore Position (m)')
         plt.xticks([],[])
@@ -282,18 +277,18 @@ def make_plots(output_folder,
         ##De-trended
         plt.subplot(5,1,4)
         plt.plot(df_de_trend.index, df_de_trend['position'], '--o', color='k', label='De-Trended')
-        plt.xlim(min(df_de_trend.index), max(df_de_trend.index))
+        plt.xlim(min(df.index), max(df.index))
         plt.ylim(np.nanmin(df_de_trend['position']), np.nanmax(df_de_trend['position']))
         plt.ylabel('Cross-Shore Position (m)')
-        plt.xlabel('Time (UTC)')
         plt.minorticks_on()
         plt.legend()
         ##De-meaned
         plt.subplot(5,1,5)
         plt.plot(df_de_meaned.index, df_de_meaned['position'], '--o', color='k', label='De-Meaned')
-        plt.xlim(min(df_de_meaned.index), max(df_de_meaned.index))
+        plt.xlim(min(df.index), max(df.index))
         plt.ylim(np.nanmin(df_de_meaned['position']), np.nanmax(df_de_meaned['position']))
         plt.ylabel('Cross-Shore Position (m)')
+        plt.xlabel('Longshore Distance (m)')
         plt.xticks([],[])
         plt.legend()
         plt.minorticks_on()
@@ -304,26 +299,30 @@ def make_plots(output_folder,
 def main(csv_path,
          output_folder,
          name,
-         which_timedelta):
+         transect_spacing,
+         which_spacedelta):
     """
-    Timeseries analysis for satellite shoreline data
+    Spatial analysis for satellite shoreline data
     inputs:
     csv_path (str): path to the shoreline timeseries csv
-    should have columns 'date' and 'position'
-    where date contains UTC datetimes in the format YYYY-mm-dd HH:MM:SS
-    position is the cross-shore position of the shoreline
+    should have columns 'transect_id' and 'position'
+    where transect_id contains the transect id, transects should be evenly spaced!!
+    position is the cross-shore position of the shoreline (in m)
     output_folder (str): path to save outputs to
+    name (str): a site name
+    transect_spacing (int): transect spacing in meters
+    which_spacedelta (str): 'minimum' 'average' or 'maximum', this is the new longshore spacing to sample at
     """
     ##Step 1: Load in data
     df = pd.read_csv(csv_path)
-    df = get_shoreline_data(csv_path)
+    df = get_shoreline_data(csv_path, 50)
     
     ##Step 2: Compute average and max time delta
-    new_timedelta = compute_time_delta(df, which_timedelta)
+    new_spacedelta = compute_time_delta(df, which_spacedelta)
 
     ##Step 3: Resample timeseries to the maximum timedelta
-    df_resampled = resample_timeseries(df, new_timedelta)
-    print('New Time Delta (' + which_timedelta + ') : ' + str(new_timedelta))
+    df_resampled = resample_timeseries(df, new_spacedelta)
+    print('New Space Delta (' + which_spacedelta + ') : ' + str(new_spacedelta)+'m')
 
     ##Step 4: Fill NaNs
     df_no_nans = fill_nans(df_resampled)
@@ -338,9 +337,10 @@ def main(csv_path,
         plot_autocorrelation(output_folder,
                              name,
                              df_de_meaned)
-        approximate_entropy = compute_approximate_entropy(df_de_meaned['position'],
+        approximate_entropy = compute_approximate_entropy(df_de_meaned['position'].values,
                                                           2,
                                                           np.std(df_de_meaned['position']))
+        print('Approximate Entropy = ' + str(np.round(approximate_entropy, 3)))
         make_plots(output_folder,
                    name,
                    df,
@@ -359,7 +359,7 @@ def main(csv_path,
         plot_autocorrelation(output_folder,
                              name,
                              df_de_trend)
-        approximate_entropy = compute_approximate_entropy(df_de_meaned['position'],
+        approximate_entropy = compute_approximate_entropy(df_de_meaned['position'].values,
                                                           2,
                                                           np.std(df_de_meaned['position']))
         print('Approximate Entropy = ' + str(np.round(approximate_entropy, 3)))
@@ -373,9 +373,15 @@ def main(csv_path,
                    df_de_trend=df_de_trend)
 
 
-main(r'C:\Users\mlundine\OneDrive - DOI\MarkLundine\Code\USGS\ShorelineSandbox\ShorelineSandbox\test1.csv',
+##main(r'C:\Users\mlundine\OneDrive - DOI\MarkLundine\Code\USGS\ShorelineSandbox\ShorelineSandbox\test1.csv',
+##     r'C:\Users\mlundine\OneDrive - DOI\MarkLundine\Code\USGS\ShorelineSandbox\ShorelineSandbox\tests',
+##     'test1',
+##     'maximum')
+
+main(r'C:\Users\mlundine\OneDrive - DOI\MarkLundine\Code\USGS\ShorelineSandbox\ShorelineSandbox\spacetest1.csv',
      r'C:\Users\mlundine\OneDrive - DOI\MarkLundine\Code\USGS\ShorelineSandbox\ShorelineSandbox\tests',
-     'test1',
+     'spacetest1',
+     50,
      'maximum')
 
 
