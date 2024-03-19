@@ -28,11 +28,12 @@ Libraries required (Python 3.7, numpy, matplotlib, datetime, random, scipy, pand
              name,
              which_timedelta):
     	"""
-    	Timeseries analysis for satellite shoreline data
-	Will save spatial series plot 
-	(raw, resampled, de-trended, de-meaned) and autocorrelation plot.
-	Will also output analysis results to a csv 
-	(result.csv)
+    	Timeseries analysis for satellite shoreline data.
+	
+	Will save timeseries plot (raw, resampled, de-trended, de-meaned) and autocorrelation plot.
+	
+	Will also output analysis results to a csv (result.csv).
+
     	inputs:
     	csv_path (str): path to the shoreline timeseries csv
     	should have columns 'date' and 'position'
@@ -83,11 +84,12 @@ Libraries required (Python 3.7, numpy, matplotlib, datetime, random, scipy, pand
              transect_spacing,
              which_spacedelta):
 	"""
-    	Spatial analysis for satellite shoreline data
-	Will save timeseries plot 
-	(raw, resampled, de-trended, de-meaned) and autocorrelation plot.
-	Will also output analysis results to a csv 
-	(result.csv)
+    	Spatial series analysis for satellite shoreline data.
+	
+	Will save spatial series plot (raw, resampled, de-trended, de-meaned) and autocorrelation plot.
+	
+	Will also output analysis results to a csv (result.csv).
+
     	inputs:
     	csv_path (str): path to the shoreline timeseries csv
     	should have columns 'transect_id' and 'position'
