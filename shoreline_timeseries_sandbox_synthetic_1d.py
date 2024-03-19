@@ -79,7 +79,7 @@ def make_matrix(dt):
     """
     datetimes = np.arange(datetime.datetime(1984,1,1),
                           datetime.datetime(2024,1,1),
-                          datetime.timedelta(days=dt)
+                          datetime.timedelta(days=int(dt))
                           ).astype(datetime.datetime)
     num_transects = len(datetimes)
     shoreline_matrix = np.zeros((len(datetimes)))
