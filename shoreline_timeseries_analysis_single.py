@@ -324,6 +324,8 @@ def main(csv_path,
     output_folder (str): path to save outputs to
     name (str): name to give this analysis run
     which_timedelta (str): 'minimum' 'average' or 'maximum', this is what the timeseries is resampled at
+    outputs:
+    timeseries_analysis_result (dict): results of this cookbook
     """
     ##Step 1: Load in data
     df = pd.read_csv(csv_path)
