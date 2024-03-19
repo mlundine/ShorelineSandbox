@@ -144,11 +144,11 @@ Here's the method for that:
 
 I am making a synthetic timeseries that follows the below equation:
 
-Cross-shore position = Linear trend + yearly pattern + noise
+	* Cross-shore position = Linear trend + yearly pattern + noise
 
-The linear trend will require a slope. 
-The yearly pattern will require an amplitude. This is a sine wave A*sin(2*pi*t/L). L would be equal to 1 year.
-The noise will require an amplitude (e.g., +/- 20 m).
+* The linear trend will require a slope. 
+* The yearly pattern will require an amplitude. This is a sine wave A*sin(2*pi*t/L). L would be equal to 1 year.
+* The noise will require an amplitude (e.g., +/- 20 m).
 
 So we can think of this as trying to model a shoreline with a long term trend and a summer vs. winter profile with some random noise.
 
