@@ -133,7 +133,7 @@ the timeseries as non-stationary (there is a temporal trend).
 
 Make a bunch of synthetic timeseries with known processes input.
 
-Use shoreline_timeseries_sandbox_synthetic_1d.py
+Use shoreline_timeseries_sandbox_synthetic_1d_generation.py
 
 Libraries required (Python 3.7, numpy, matplotlib, datetime, random, pandas, os)
 
