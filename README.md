@@ -27,24 +27,23 @@ Libraries required (Python 3.7, numpy, matplotlib, datetime, random, scipy, pand
              output_folder,
              name,
              which_timedelta):
-    	"""
-    	Timeseries analysis for satellite shoreline data.
-	
-	Will save timeseries plot (raw, resampled, de-trended, de-meaned) and autocorrelation plot.
-	
-	Will also output analysis results to a csv (result.csv).
-
-    	inputs:
-    	csv_path (str): path to the shoreline timeseries csv
-    	should have columns 'date' and 'position'
-    	where date contains UTC datetimes in the format YYYY-mm-dd HH:MM:SS
-    	position is the cross-shore position of the shoreline
-    	output_folder (str): path to save outputs to
-    	name (str): name to give this analysis run
-    	which_timedelta (str): 'minimum' 'average' or 'maximum', this is what the timeseries is resampled at
-    	outputs:
-    	timeseries_analysis_result (dict): results of this cookbook
-	"""
+    	     """
+    	     Timeseries analysis for satellite shoreline data
+    	     Will save timeseries plot (raw, resampled, de-trended, de-meaned) and autocorrelation plot.
+    	     Will also output analysis results to a csv (result.csv)
+    	     inputs:
+    	     csv_path (str): path to the shoreline timeseries csv
+    	     should have columns 'date' and 'position'
+    	     where date contains UTC datetimes in the format YYYY-mm-dd HH:MM:SS
+    	     position is the cross-shore position of the shoreline
+    	     output_folder (str): path to save outputs to
+    	     name (str): name to give this analysis run
+    	     which_timedelta (str): 'minimum' 'average' or 'maximum' or 'custom', this is what the timeseries is resampled at
+    	     timedelta (str, optional): the custom time spacing (e.g., '30D' is 30 days)
+    	     beware of choosing minimum, with a mix of satellites, the minimum time spacing can be so low that you run into fourier transform problems
+    	     outputs:
+    	     timeseries_analysis_result (dict): results of this cookbook
+    	     """
 1. Resample timeseries to minimum, average, or maximum time delta (temporal spacing of timeseries). My gut is to go with the maximum so we aren't creating data. If we go with minimum or average then linearly interpolate the values to get rid of NaNs.
 
 2. Check if timeseries is stationary with ADF test. We'll use a p-value of 0.05. If we get a p-value greater than this then we are interpreting
