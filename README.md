@@ -183,7 +183,12 @@ Compare with actual satellite derived shoreline data. Can use CoastSat database 
 
 # Part 6: Develop Workflow for Building ML Forecasting Model from CoastSeg Data
 
-1. Take CoastSeg tidally corrected timeseries matrix and downsample to maximum timedelta then downsample this result to maximum spacedelta.
+Requirements (Python 3.7, tensorflow, keras, pandas, matplotlib, numpy, datetime, random, scipy, pandas, statsmodels, os, csv)
+
+* 1D timeseries is complete, see lstm_projection_single_transect_coastseg.py
+* 2D is in progress
+
+1. Take CoastSeg timeseries matrix and downsample to maximum timedelta then downsample this result to maximum spacedelta.
 2. Train parallel LSTM model, using guidance from dissertation results.
 
 
