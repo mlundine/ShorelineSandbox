@@ -427,6 +427,7 @@ def main_df(df,
                                   'snr_no_nans':snr_no_nans,
                                   'approx_entropy':approximate_entropy}
 
+    ##Save this dictionary to a csv
     result = os.path.join(output_folder, 'result.csv')
     with open(result,'w') as f:
         w = csv.writer(f)
