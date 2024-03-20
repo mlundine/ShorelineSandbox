@@ -110,6 +110,17 @@ def get_shoreline_data(csv_path):
                           index=dates.values)
     return new_df
 
+def get_shoreline_data_df(df):
+    """
+    Reads and reformats the timeseries into a pandas dataframe with datetime index
+    """
+    df = df.replace(r'^\s*$', np.nan, regex=True)
+    dates = pd.to_datetime(df['date'], format='%Y-%m-%d %H:%M:%S')
+
+    new_df = pd.DataFrame({'position':df['position'].values},
+                          index=dates.values)
+    return new_df
+
 def compute_time_delta(df, which_timedelta):
     """
     Computes average and max time delta for timeseries rounded to days
@@ -312,7 +323,8 @@ def make_plots(output_folder,
 def main_df(df,
             output_folder,
             name,
-            which_timedelta):
+            which_timedelta,
+            timedelta=None):
     """
     Timeseries analysis for satellite shoreline data
     Will save timeseries plot (raw, resampled, de-trended, de-meaned) and autocorrelation plot.
@@ -324,16 +336,20 @@ def main_df(df,
     position is the cross-shore position of the shoreline
     output_folder (str): path to save outputs to
     name (str): name to give this analysis run
-    which_timedelta (str): 'minimum' 'average' or 'maximum', this is what the timeseries is resampled at
+    which_timedelta (str): 'minimum' 'average' or 'maximum' or 'custom', this is what the timeseries is resampled at
+    timedelta (str, optional): the custom time spacing (e.g., '30D' is 30 days)
+    beware of choosing minimum, with a mix of satellites, the minimum time spacing can be so low that you run into fourier transform problems
     outputs:
     timeseries_analysis_result (dict): results of this cookbook
     """
     ##Step 1: Load in data
-    df = pd.read_csv(csv_path)
-    df = get_shoreline_data(csv_path)
+    df = get_shoreline_data_df(df)
     
     ##Step 2: Compute average and max time delta
-    new_timedelta = compute_time_delta(df, which_timedelta)
+    if which_timedelta != 'custom':
+        new_timedelta = compute_time_delta(df, which_timedelta)
+    else:
+        new_timedelta=timedelta
 
     ##Step 3: Resample timeseries to the maximum timedelta
     df_resampled = resample_timeseries(df, new_timedelta)
@@ -417,14 +433,16 @@ def main_df(df,
         w.writerow(timeseries_analysis_result.values())
 
     output_df = pd.DataFrame({'date':df_no_nans.index,
-                              'pos_resampled':df_no_nans['position']})
-    output_df.to_csv(output_folder, name+'_resampled.csv')
-    return timeseries_analysis_result, output_df
+                              'position':df_no_nans['position']})
+    output_path = os.path.join(output_folder, name+'_resampled.csv')
+    output_df.to_csv(output_path)
+    return timeseries_analysis_result, output_df, new_timedelta
 
 def main(csv_path,
          output_folder,
          name,
-         which_timedelta):
+         which_timedelta,
+         timedelta=None):
     """
     Timeseries analysis for satellite shoreline data
     Will save timeseries plot (raw, resampled, de-trended, de-meaned) and autocorrelation plot.
@@ -436,7 +454,9 @@ def main(csv_path,
     position is the cross-shore position of the shoreline
     output_folder (str): path to save outputs to
     name (str): name to give this analysis run
-    which_timedelta (str): 'minimum' 'average' or 'maximum', this is what the timeseries is resampled at
+    which_timedelta (str): 'minimum' 'average' or 'maximum' or 'custom', this is what the timeseries is resampled at
+    timedelta (str, optional): the custom time spacing (e.g., '30D' is 30 days)
+    beware of choosing minimum, with a mix of satellites, the minimum time spacing can be so low that you run into fourier transform problems
     outputs:
     timeseries_analysis_result (dict): results of this cookbook
     """
@@ -445,8 +465,11 @@ def main(csv_path,
     df = get_shoreline_data(csv_path)
     
     ##Step 2: Compute average and max time delta
-    new_timedelta = compute_time_delta(df, which_timedelta)
-
+    if which_timedelta != 'custom':
+        new_timedelta = compute_time_delta(df, which_timedelta)
+    else:
+        new_timedelta=timedelta
+    
     ##Step 3: Resample timeseries to the maximum timedelta
     df_resampled = resample_timeseries(df, new_timedelta)
 
@@ -529,7 +552,7 @@ def main(csv_path,
         w.writerow(timeseries_analysis_result.values())
 
     output_df = pd.DataFrame({'date':df_no_nans.index,
-                              'pos_resampled':df_no_nans['position']})
+                              'position':df_no_nans['position']})
     output_df.to_csv(output_folder, name+'_resampled.csv')
     return timeseries_analysis_result
 
