@@ -188,7 +188,7 @@ Requirements (Python 3.7, tensorflow, keras, pandas, matplotlib, numpy, datetime
 * 2D is in progress
 
 1. Take CoastSeg timeseries matrix and downsample to maximum timedelta then downsample this result to maximum spacedelta.
-2. Train parallel LSTM model, using guidance from dissertation results.
+2. Train parallel LSTM model, using guidance from dissertation results (LSTM units = 64, avoid long lookback values, probably train models on littoral cell basis)
 
 
 
