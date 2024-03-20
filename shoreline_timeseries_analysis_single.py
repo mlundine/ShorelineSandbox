@@ -320,6 +320,7 @@ def make_plots(output_folder,
         plt.tight_layout()
         plt.savefig(fig_save, dpi=300)
         plt.close()
+        
 def main_df(df,
             output_folder,
             name,
