@@ -108,9 +108,6 @@ def train_model(train_generator, test_generator, look_back, units=30, num_epochs
                                   callbacks=[early_stopping_callback],
                                   validation_data=test_generator,
                                   verbose=1)
-
-
-    prediction = model.predict_generator(test_generator)
     return model, history
 
 def predict_data(model, prediction_generator):
@@ -118,7 +115,6 @@ def predict_data(model, prediction_generator):
     Getting predictions from trained model
     """
     prediction = model.predict_generator(prediction_generator)
-    #prediction = scaler.inverse_transform(prediction)
     return prediction
 
 def project(df,
