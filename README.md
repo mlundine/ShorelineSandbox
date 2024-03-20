@@ -5,6 +5,8 @@ Can we see more in these datasets currently other than big trends?
 
 Help wanted...
 
+At some point this will live in SDS tools.
+
 Goal: Identify areas where improvements in satellite derived shoreline data are needed to capture processes and build better predictive models.
 
 Questions: 
