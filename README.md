@@ -175,11 +175,18 @@ Some things we should estimate:
 
 # Part 5:
 
-Similarly, make a bunch of synthetic timeseries with known processes input
+Similarly, make a bunch of synthetic timeseries with known processes.
 
-See how much noise and data gaps we can add until an ML model fails at producing accurate predictions.
+See how much noise and data gaps we can add until a ML model fails at producing accurate predictions.
 
-Compare with actual satellite derived shoreline data.
+Compare with actual satellite derived shoreline data. Can use CoastSat database and database from graduate work.
+
+# Part 6: Develop Workflow for Building ML Forecasting Model from CoastSeg Data
+
+1. Take CoastSeg tidally corrected timeseries matrix and downsample to maximum timedelta then downsample this result to maximum spacedelta.
+2. Train parallel LSTM model, using guidance from dissertation results.
+
+
 
 
 

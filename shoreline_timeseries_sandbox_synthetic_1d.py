@@ -161,6 +161,7 @@ def experiment(experiment_name,
             for yearly_amplitude in yearly_amplitudes:
                 for dt in dts:
                     for t_gap_frac in t_gap_fracs:
+                        
                         trial_name = experiment_name+'_'+str(i)
                         trial_dir = os.path.join(save_dir, trial_name)
                         synthetic_data_path = os.path.join(trial_dir, 'synthetic.csv')
@@ -175,26 +176,60 @@ def experiment(experiment_name,
                                                    dt,
                                                    t_gap_frac,
                                                    synthetic_data_path)
-                        ##Apply timeseries analysis
-                        timeseries_analysis_result = stsa.main(synthetic_data,
-                                                               trial_dir,
-                                                               trial_name,
-                                                               'maximum')
-                        noise_vals_col[i] = noise_val
-                        trend_vals_col[i] = trend_val
-                        yearly_amplitudes_col[i] = yearly_amplitude
-                        dts_col[i] = dt
-                        t_gap_fracs_col[i] = t_gap_frac
-                        computed_trends_col[i] = timeseries_analysis_result['computed_trend']
-                        computed_trend_unc_col[i] = timeseries_analysis_result['trend_unc']
-                        autocorr_max_col[i] = timeseries_analysis_result['autocorr_max']
-                        lag_max_col[i] = timeseries_analysis_result['lag_max']
-                        new_timedelta_col[i] = timeseries_analysis_result['new_timedelta']
-                        snr_no_nans_col[i] = timeseries_analysis_result['snr_no_nans']
-                        approx_entropy_col[i] = timeseries_analysis_result['approx_entropy']
-                        save_names_col[i] = trial_dir
-                        i=i+1
-                        print('Progress: ' + str(100*(i/len_df))+'%')
+                        if i < 2352:
+                            timeseries_analysis_result = pd.read_csv(os.path.join(trial_dir, 'result.csv')).iloc[0].to_dict()
+                            noise_vals_col[i] = noise_val
+                            trend_vals_col[i] = trend_val
+                            yearly_amplitudes_col[i] = yearly_amplitude
+                            dts_col[i] = dt
+                            t_gap_fracs_col[i] = t_gap_frac
+                            computed_trends_col[i] = timeseries_analysis_result['computed_trend']
+                            computed_trend_unc_col[i] = timeseries_analysis_result['trend_unc']
+                            autocorr_max_col[i] = timeseries_analysis_result['autocorr_max']
+                            lag_max_col[i] = timeseries_analysis_result['lag_max']
+                            new_timedelta_col[i] = timeseries_analysis_result['new_timedelta']
+                            snr_no_nans_col[i] = timeseries_analysis_result['snr_no_nans']
+                            approx_entropy_col[i] = timeseries_analysis_result['approx_entropy']
+                            save_names_col[i] = trial_dir
+                            i=i+1
+                            print('Progress: ' + str(100*(i/len_df))+'%')
+                        elif noise_val == 0 and trend_val == 0 and yearly_amplitude ==0:
+                            noise_vals_col[i] = noise_val
+                            trend_vals_col[i] = trend_val
+                            yearly_amplitudes_col[i] = yearly_amplitude
+                            dts_col[i] = dt
+                            t_gap_fracs_col[i] = t_gap_frac
+                            computed_trends_col[i] = None
+                            computed_trend_unc_col[i] = None
+                            autocorr_max_col[i] = None
+                            lag_max_col[i] = None
+                            new_timedelta_col[i] = None
+                            snr_no_nans_col[i] = None
+                            approx_entropy_col[i] = None
+                            save_names_col[i] = trial_dir
+                            i=i+1
+                            print('Progress: ' + str(100*(i/len_df))+'%')
+                        else:
+                            ##Apply timeseries analysis
+                            timeseries_analysis_result = stsa.main(synthetic_data,
+                                                                   trial_dir,
+                                                                   trial_name,
+                                                                   'maximum')
+                            noise_vals_col[i] = noise_val
+                            trend_vals_col[i] = trend_val
+                            yearly_amplitudes_col[i] = yearly_amplitude
+                            dts_col[i] = dt
+                            t_gap_fracs_col[i] = t_gap_frac
+                            computed_trends_col[i] = timeseries_analysis_result['computed_trend']
+                            computed_trend_unc_col[i] = timeseries_analysis_result['trend_unc']
+                            autocorr_max_col[i] = timeseries_analysis_result['autocorr_max']
+                            lag_max_col[i] = timeseries_analysis_result['lag_max']
+                            new_timedelta_col[i] = timeseries_analysis_result['new_timedelta']
+                            snr_no_nans_col[i] = timeseries_analysis_result['snr_no_nans']
+                            approx_entropy_col[i] = timeseries_analysis_result['approx_entropy']
+                            save_names_col[i] = trial_dir
+                            i=i+1
+                            print('Progress: ' + str(100*(i/len_df))+'%')
                         
                         
 
