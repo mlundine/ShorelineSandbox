@@ -428,7 +428,7 @@ def main_df(df,
                                   'approx_entropy':approximate_entropy}
 
     ##Save this dictionary to a csv
-    result = os.path.join(output_folder, 'result.csv')
+    result = os.path.join(output_folder, name+'tsa_result.csv')
     with open(result,'w') as f:
         w = csv.writer(f)
         w.writerow(timeseries_analysis_result.keys())

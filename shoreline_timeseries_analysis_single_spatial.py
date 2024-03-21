@@ -1,6 +1,8 @@
 """
 Mark Lundine
 This is an in-progress script with tools for processing 1D shoreline timeseries data.
+
+Updates needed!!
 """
 import numpy as np
 import matplotlib.pyplot as plt

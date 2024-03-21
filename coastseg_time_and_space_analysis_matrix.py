@@ -10,15 +10,23 @@ import shoreline_timeseries_analysis_single as stas
 import shoreline_timeseries_analysis_single_spatial as stasp
 
 
-##This is not functional at all yet
+##This is not functional at all yet but almost
 def main(transect_timeseries_path,
-         config_gdf):
+         config_gdf,
+         output_folder,
+         transect_spacing,
+         which_timedelta,
+         timedelta=None):
     """
     Performs timeseries and spatial series analysis cookbook on each
     transect in the transect_time_series matrix from CoastSeg
     inputs:
     transect_timeseries_path (str): path to the transect_time_series.csv
     config_gdf_path (str): path to the config_gdf.geojson
+    output_folder (str): path to save outputs to
+    which_timedelta (str): 'minimum' 'average' or 'maximum' or 'custom', this is what the timeseries is resampled at
+    timedelta (str, optional): the custom time spacing (e.g., '30D' is 30 days)
+    beware of choosing minimum, with a mix of satellites, the minimum time spacing can be so low that you run into fourier transform problems
     """
 
     ##Load in data
@@ -27,14 +35,13 @@ def main(transect_timeseries_path,
                                               format='%Y-%m-%d %H:%M:%S+00:00')
     config_gdf = gpd.read_file(config_gdf_path)
     transects = config_gdf[config_gdf['type']=='transect']
-    
-    timeseries_csvs = [None]*len(transects)
+
+    ##Loop over transects
     transect_ids = [None]*len(transects)
-    timeseries_mat_list = [None]*len(transects)
+    timeseries_dfs = [None]*len(transects)
+    timedeltas = [None]*len(transects)
     for i in range(len(transects)):
         transect_id = transects['id'].iloc[i]
-        timeseries_csv_path = os.path.join(timeseries_csv_dir, transect_id+'.csv')
-        timeseries_plot_path = os.path.join(timeseries_plot_dir, transect_id+'_timeseries.png')
         
         dates = timeseries_data['dates']
         
@@ -46,6 +53,53 @@ def main(transect_timeseries_path,
 
         transect_ids[i] = transect_id
         
-        ##Some simple timeseries processing
-        data = pd.DataFrame({'distances':select_timeseries},
-                            index=dates)
+        ##Timeseries processing
+        data = pd.DataFrame({'date':dates,
+                             'position':select_timeseries})
+        timeseries_analysis_result, output_df, new_timedelta = stas.main_df(df,
+                                                                            output_folder,
+                                                                            transect_id,
+                                                                            which_timedelta,
+                                                                            timedelta=timedelta)
+        output_df = output_df.set_index(['date'])
+        output_df = output_df.rename(columns = {'position':transect_id})
+        timeseries_dfs[i] = output_df
+        timedeltas[i] = new_timedelta
+
+    ##Remove Nones in case there were transects in config_gdf with no timeseries data
+    transect_ids = [ele for ele in transect_ids if ele is not None]
+    timeseries_dfs = [ele for ele in transect_ids if ele is not None]
+    timedeltas = [ele for ele in transect_ids if ele is not None]
+    
+    ##Make new matrix 
+    new_matrix = pd.concat(timeseries_dfs, 1)
+
+    ##Loop over time
+    datetimes = new_matrix.index
+    space_series_dfs = [None]*len(datetimes)
+    spacedeltas = [None]*len(datetimes)
+    for j in range(len(datetimes)):
+        date = datetimes[j]
+        
+        try:
+            select_timeseries = np.array(new_matrix.loc[datetime])
+        except:
+            i=i+1
+            continue
+        
+        ##Timeseries processing
+        data = pd.DataFrame({'transect_id':transect_ids,
+                             'position':select_timeseries})
+        timeseries_analysis_result, output_df, new_timedelta = stasp.main_df(df,
+                                                                             output_folder,
+                                                                             'timestep'+str(i),
+                                                                             transect_spacing,
+                                                                             which_timedelta,
+                                                                             timedelta=timedelta)       
+        
+
+
+
+
+
+        
