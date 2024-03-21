@@ -304,12 +304,13 @@ def make_plots(output_folder,
         plt.tight_layout()
         plt.savefig(fig_save, dpi=300)
         plt.close()
-    
-def main(csv_path,
-         output_folder,
-         name,
-         transect_spacing,
-         which_spacedelta):
+        
+def main_df(df,
+            output_folder,
+            name,
+            transect_spacing,
+            which_spacedelta,
+            spacedelta=None):
     """
     Spatial analysis for satellite shoreline data
     inputs:
@@ -320,26 +321,31 @@ def main(csv_path,
     output_folder (str): path to save outputs to
     name (str): a site name
     transect_spacing (int): transect spacing in meters
-    which_spacedelta (str): 'minimum' 'average' or 'maximum', this is the new longshore spacing to sample at
+    which_spacedelta (str): 'minimum' 'average' or 'maximum' or 'custom this is the new longshore spacing to sample at
+    spacedelta (int, optional): if custom specify new spacedelta, do not put finer spacing than input!!
     outputs:
     spatial_series_analysis_result (dict): results of this cookbook
     """
     ##Step 1: Load in data
     df = pd.read_csv(csv_path)
-    df = get_shoreline_data(csv_path, 50)
+    df = get_shoreline_data(csv_path, transect_spacing)
     
     ##Step 2: Compute average and max time delta
-    new_spacedelta = compute_time_delta(df, which_spacedelta)
+    if which_spacedelta != 'custom':
+        new_spacedelta = compute_space_delta(df, which_spacedelta)
+    else:
+        new_spacedelta=spacedelta
+
 
     ##Step 3: Resample timeseries to the maximum timedelta
     df_resampled = resample_timeseries(df, new_spacedelta)
 
     ##Step 4: Fill NaNs
     df_no_nans = fill_nans(df_resampled)
-    
+    snr_no_nans = np.abs(np.mean(df_no_nans['position']))/np.std(df_no_nans['position'])
+
     ##Step 5: Check for stationarity with ADF test
     stationary_bool = adf_test(df_no_nans['position'])
-    snr_no_nans = np.abs(np.mean(df_no_nans['position']))/np.std(df_no_nans['position'])
     
     ##Step 6a: If timeseries stationary, de-mean, compute autocorrelation and approximate entropy
     ##Then make plots
@@ -406,7 +412,126 @@ def main(csv_path,
                                       'snr_no_nans':snr_no_nans,
                                       'approx_entropy':approximate_entropy}
 
-    result = os.path.join(output_folder, 'result.csv')
+    result = os.path.join(output_folder, name+'ssa_result.csv')
+    with open(result,'w') as f:
+        w = csv.writer(f)
+        w.writerow(timeseries_analysis_result.keys())
+        w.writerow(timeseries_analysis_result.values())
+        
+    output_df = pd.DataFrame({'longshore_position':df_no_nans.index,
+                              'position':df_no_nans['position']})
+    output_path = os.path.join(output_folder, name+'_resampled.csv')
+    output_df.to_csv(output_path)  
+    return spatial_series_analysis_result, output_df, new_spacedelta
+
+def main(csv_path,
+         output_folder,
+         name,
+         transect_spacing,
+         which_spacedelta,
+         spacedelta=None):
+    """
+    Spatial analysis for satellite shoreline data
+    inputs:
+    csv_path (str): path to the shoreline timeseries csv
+    should have columns 'transect_id' and 'position'
+    where transect_id contains the transect id, transects should be evenly spaced!!
+    position is the cross-shore position of the shoreline (in m)
+    output_folder (str): path to save outputs to
+    name (str): a site name
+    transect_spacing (int): transect spacing in meters
+    which_spacedelta (str): 'minimum' 'average' or 'maximum' or 'custom this is the new longshore spacing to sample at
+    spacedelta (int, optional): if custom specify new spacedelta, do not put finer spacing than input!!
+    outputs:
+    spatial_series_analysis_result (dict): results of this cookbook
+    """
+    ##Step 1: Load in data
+    df = pd.read_csv(csv_path)
+    df = get_shoreline_data(csv_path, transect_spacing)
+    
+    ##Step 2: Compute average and max time delta
+    if which_spacedelta != 'custom':
+        new_spacedelta = compute_space_delta(df, which_spacedelta)
+    else:
+        new_spacedelta=spacedelta
+
+
+    ##Step 3: Resample timeseries to the maximum timedelta
+    df_resampled = resample_timeseries(df, new_spacedelta)
+
+    ##Step 4: Fill NaNs
+    df_no_nans = fill_nans(df_resampled)
+    snr_no_nans = np.abs(np.mean(df_no_nans['position']))/np.std(df_no_nans['position'])
+
+    ##Step 5: Check for stationarity with ADF test
+    stationary_bool = adf_test(df_no_nans['position'])
+    
+    ##Step 6a: If timeseries stationary, de-mean, compute autocorrelation and approximate entropy
+    ##Then make plots
+    if stationary_bool == True:
+        df_de_meaned = de_mean_timeseries(df_no_nans)
+        autocorr_max, lag_max = plot_autocorrelation(output_folder,
+                                                     name,
+                                                     df_de_meaned)
+        approximate_entropy = compute_approximate_entropy(df_de_meaned['position'],
+                                                          2,
+                                                          np.std(df_de_meaned['position']))
+        make_plots(output_folder,
+                   name,
+                   df,
+                   df_resampled,
+                   df_no_nans,
+                   df_de_meaned,
+                   df_de_trend_bool=False)
+        slope = np.nan
+        intercept = np.nan
+        stderr = np.nan
+        intercept_stderr = np.nan
+        r_sq = np.nan
+
+        
+    ##Step 6b: If timeseries non-stationary, compute trend, de-trend, de-mean, compute autocorrelation and approximate entropy
+    ##Then make plots
+    else:
+        trend_result, x = get_linear_trend(df_no_nans)
+        df_de_trend, df_trend = de_trend_timeseries(df_no_nans, trend_result, x)
+        ##Step 5: De-mean the timeseries
+        df_de_meaned = de_mean_timeseries(df_de_trend)
+        autocorr_max, lag_max = plot_autocorrelation(output_folder,
+                                                     name,
+                                                     df_de_meaned)
+        approximate_entropy = compute_approximate_entropy(df_de_meaned['position'].values,
+                                                          2,
+                                                          np.std(df_de_meaned['position']))
+        make_plots(output_folder,
+                   name,
+                   df,
+                   df_resampled,
+                   df_no_nans,
+                   df_de_meaned,
+                   df_de_trend_bool=True,
+                   df_de_trend=df_de_trend,
+                   df_trend=df_trend)
+        slope = trend_result.slope
+        intercept = trend_result.intercept
+        stderr = trend_result.stderr
+        intercept_stderr = trend_result.intercept_stderr
+        r_sq = trend_result.rvalue**2
+
+    ##Put results into dictionary
+    spatial_series_analysis_result = {'stationary_bool':stationary_bool,
+                                      'computed_trend':slope,
+                                      'computed_intercept':intercept,
+                                      'trend_unc':stderr,
+                                      'intercept_unc':intercept_stderr,
+                                      'r_sq':r_sq,
+                                      'autocorr_max':autocorr_max,
+                                      'lag_max':str(lag_max*new_spacedelta),
+                                      'new_timedelta':str(new_timedelta),
+                                      'snr_no_nans':snr_no_nans,
+                                      'approx_entropy':approximate_entropy}
+
+    result = os.path.join(output_folder, name+'ssa_result.csv')
     with open(result,'w') as f:
         w = csv.writer(f)
         w.writerow(timeseries_analysis_result.keys())

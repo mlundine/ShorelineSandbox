@@ -1,7 +1,7 @@
 """
 Mark Lundine
 This script is in progress.
-The goal is to take the CoastSeg matrix and resample it intelligently
+The goal is to take the CoastSeg matrix and resample it intelligently.
 in the time and space domain so that it is equally spaced temporally and spatially.
 This will allow for predictive modeling from satellite shoreline data obtained from CoastSeg.
 """
@@ -16,7 +16,9 @@ def main(transect_timeseries_path,
          output_folder,
          transect_spacing,
          which_timedelta,
-         timedelta=None):
+         which_spacedelta,
+         timedelta=None,
+         spacedelta=None):
     """
     Performs timeseries and spatial series analysis cookbook on each
     transect in the transect_time_series matrix from CoastSeg
@@ -25,8 +27,10 @@ def main(transect_timeseries_path,
     config_gdf_path (str): path to the config_gdf.geojson
     output_folder (str): path to save outputs to
     which_timedelta (str): 'minimum' 'average' or 'maximum' or 'custom', this is what the timeseries is resampled at
+    which_spacedelta (str): 'minimum' 'average' or 'maximum' or 'custom', this is the matrix is sampled at in the longshore direction
     timedelta (str, optional): the custom time spacing (e.g., '30D' is 30 days)
     beware of choosing minimum, with a mix of satellites, the minimum time spacing can be so low that you run into fourier transform problems
+    spacedelta (int, optional): custom longshore spacing, do not make this finer than the input transect spacing!!!!
     """
 
     ##Load in data
@@ -36,7 +40,7 @@ def main(transect_timeseries_path,
     config_gdf = gpd.read_file(config_gdf_path)
     transects = config_gdf[config_gdf['type']=='transect']
 
-    ##Loop over transects
+    ##Loop over transects (space)
     transect_ids = [None]*len(transects)
     timeseries_dfs = [None]*len(transects)
     timedeltas = [None]*len(transects)
@@ -80,22 +84,38 @@ def main(transect_timeseries_path,
     spacedeltas = [None]*len(datetimes)
     for j in range(len(datetimes)):
         date = datetimes[j]
-        
         try:
             select_timeseries = np.array(new_matrix.loc[datetime])
         except:
             i=i+1
             continue
         
-        ##Timeseries processing
+        ##space series processing
         data = pd.DataFrame({'transect_id':transect_ids,
                              'position':select_timeseries})
-        timeseries_analysis_result, output_df, new_timedelta = stasp.main_df(df,
-                                                                             output_folder,
-                                                                             'timestep'+str(i),
-                                                                             transect_spacing,
-                                                                             which_timedelta,
-                                                                             timedelta=timedelta)       
+        space_series_analysis_result, output_df, new_spacedelta = stasp.main_df(df,
+                                                                                output_folder,
+                                                                                'timestep'+str(i),
+                                                                                transect_spacing,
+                                                                                which_spacedelta,
+                                                                                spacedelta=spacedelta)
+        output_df.set_index(['longshore_position'])
+        output_df = output_df.rename(columns = {'date':date})
+        space_series_dfs[i] = output_df
+        spacedeltas[i] = new_spacedelta
+
+
+    ##Remove nones in case there were times with no data
+    space_series_dfs = [ele for ele in transect_ids if ele is not None]
+    spacedeltas = [ele for ele in transect_ids if ele is not None]
+    new_matrix = pd.concat(space_series_dfs,1)
+
+    
+        
+        
+        
+        
+        
         
 
 
