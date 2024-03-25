@@ -109,6 +109,8 @@ def main(transect_timeseries_path,
     space_series_dfs = [ele for ele in transect_ids if ele is not None]
     spacedeltas = [ele for ele in transect_ids if ele is not None]
     new_matrix = pd.concat(space_series_dfs,1)
+    new_matrix_path = os.path.join(output_folder, 'timeseries_mat_resample.csv')
+    new_matrix.to_csv(new_matrix_path)
 
     
         
